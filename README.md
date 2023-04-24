@@ -24,6 +24,12 @@ For this project, all of the controls for setting the sun’s parameters are pre
 
 ## Project Details
 
-Built with Unity 2021.3.22f1, the HDRP rendering pipeline, XR Plugin Management version 4.3.3, 
-and XR Interaction Toolkit 2.3.1
+Built with Unity 2021.3.22f1, the HDRP rendering pipeline, XR Plugin Management version 4.3.3, and XR Interaction Toolkit 2.3.1
+
+Sun angle calculations based primarily on information from NOAA:
+https://gml.noaa.gov/grad/solcalc/solareqns.PDF
+https://gml.noaa.gov/grad/solcalc/azel.html
+
+Latitude and Longitude lookups from:
+https://www.latlong.net/
 

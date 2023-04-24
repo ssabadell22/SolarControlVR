@@ -33,7 +33,7 @@ public class SunAngleCalculator : MonoBehaviour
     [Button(ButtonSizes.Medium)]
         private void DoTheMath() { DoCalculationAndReport(); }
     [Button(ButtonSizes.Medium)]
-        private void Apply() { ApplySolarValuesToSunLight(); }
+        private void ApplyToSunLight() { ApplySolarValuesToSunLight(); }
 
     // Latitudes to the north are positive
     [Range(-90f, 90f)]
