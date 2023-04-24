@@ -32,7 +32,9 @@ public class SunAngleCalculator : MonoBehaviour
 
     [Button(ButtonSizes.Medium)]
         private void DoTheMath() { DoCalculationAndReport(); }
-    
+    [Button(ButtonSizes.Medium)]
+        private void Apply() { ApplySolarValuesToSunLight(); }
+
     // Latitudes to the north are positive
     [Range(-90f, 90f)]
     private float _latitudeDecimalDegrees = 32f;
@@ -50,6 +52,77 @@ public class SunAngleCalculator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+    }
+    
+    private void ApplySolarValuesToSunLight()
+    {
+        var currentCity = CityLatitudeAndLongitude();
+        _latitudeDecimalDegrees = currentCity.lat;
+        _longitudeDecimalDegrees = currentCity.lng;
+        var sunAngles = CalculateSolarValues();
+        
+        // Until more control is added, North will be assumed to be +Z on the global axis.
+        // I am not sure in what order rotations are applied to objects. In our case,
+        // we very much need to calculate the Quaternion with two distinct rotations:
+        // the azimuth rotation around the Y, then, the elevation rotation around the
+        // now-rotated (local) X.
+        // Looking at the UI:
+        //   At rotational value of (0,0,0), the sun points due-north.
+        //   At (90,0,0), the sun is directly overhead.
+        //   At (0,45,0), the sun will be on the horizon, in the SW.
+        // According to the help docs: rotations are performed around the Z axis, then X axis,
+        // and then Y axis, in that order. I feel like that needs to be reversed.  
+        
+        // Found one example of how to apply the angles to a quaternion. It seems to be working,
+        // though it is difficult to know for sure without some real world validation.
+        Vector3 angles = new Vector3();
+        angles.x = (float)sunAngles.elevation;
+        angles.y = (float)sunAngles.azimuth - 180f;
+        Debug.Log($"Setting azimuth to {angles.y} and elevation to {angles.x}");
+        _sunLight.transform.localRotation = Quaternion.Euler(angles);
+    }
+
+    // For very quick testing purposes. Source: https://gml.noaa.gov/grad/solcalc/azel.html
+    //   New York City, 09:00 Dec 1:
+    //      equation of time 11.04
+    //      declination -21.81
+    //      azimuth 140.29 (2a)
+    //      elevation 16.71 (1)
+    //   New York City, 17:00 Jun 1: 
+    //      equation of time 2.12
+    //      declination 22.11
+    //      azimuth 279.11 (2b)
+    //      elevation 24.19 (1)
+    //   New York City, 12:00 Mar 1: 
+    //      equation of time -12.33
+    //      declination -7.51
+    //      azimuth 177.21
+    //      elevation 41.76
+    //   San Francisco, 09:00 Mar 1: 
+    //      equation of time -12.33
+    //      declination -7.5
+    //      azimuth 122.61 (2a)
+    //      elevation 24.78 (1)
+    //   San Francisco, 17:00 Sep 1: 
+    //      equation of time 0.07
+    //      declination 8.07
+    //      azimuth 265.74 (2b)
+    //      elevation 18.71 (1)
+    //   San Francisco, 12:00 Jun 1: 
+    //      equation of time 2.12
+    //      declination 22.1
+    //      azimuth 173.55
+    //      elevation 74.25
+    // I do see slightly different numbers from this math, but the numbers at the end of
+    // the calculations - azimuth and elevation - we are within a degree, and I suspect this
+    // is due to the math being an approximation. The NOAA spreadsheet math seems to be
+    // more accurate (for one thing it takes the year into account).
+    private void DoCalculationAndReport()
+    {
+        var currentCity = CityLatitudeAndLongitude();
+        _latitudeDecimalDegrees = currentCity.lat;
+        _longitudeDecimalDegrees = currentCity.lng;
+        CalculateSolarValues();
     }
 
     private int DayOfYear()
@@ -75,6 +148,20 @@ public class SunAngleCalculator : MonoBehaviour
         return (dayOfYearIndex + _dayOfMonth);
     }
 
+    // Returns lat and long for the selected major city, in degrees.
+    private (float lat, float lng) CityLatitudeAndLongitude()
+    {
+        // Order here must match sequence in the enum.
+        // Source: https://www.latlong.net/
+        (MajorCities city, float lat, float lng) [] cities = 
+        {
+            (MajorCities.NewYork, 40.712776f, -74.005974f),
+            (MajorCities.SanFrancisco, 37.774929f, -122.419418f)
+        };
+        var currentCity = cities[(int)_nearestMajorCity];
+        return (currentCity.lat, currentCity.lng);
+    }
+
     // Returns azimuth and elevation in degrees. Note that when applying with Euler
     // rotation, the azimuth rotation must be applied first, as the elevation angle
     // is measured up from the horizon at the azimuth location.
@@ -98,62 +185,23 @@ public class SunAngleCalculator : MonoBehaviour
         (double, double) solarAzimuths2 = SolarAzimuth(zenithAngles.Item2, solarDeclinationAngle);
         double solarAzimuthDeg = 
             (solarHourAngle < 0.0) ? Rad2Deg(solarAzimuths2.Item1) : Rad2Deg(solarAzimuths2.Item2);
-        Debug.Log(
+        //Debug.Log(
                 //$"Fractional year {fractionalYear:0.0#####} radians"
                 //+ $"\nTime offset {timeOffset:0.0#####} minutes"
                 //+ $"\nTrue solar time {trueSolarTime:0.0#####} minutes"
                 //+ $"\nSolar hour angle {solarHourAngle:0.0#####} radians"
                 // $"\nEquation of time {equationOfTime:0.0#####} minutes"
                 //+ $"\nSolar declination angle {solarDeclinationAngleDeg:0.0#####} degrees"
-                 $"\nSolar elevation {solarElevation1Deg:0.0#####} degrees"
+                // $"\nSolar elevation {solarElevation1Deg:0.0#####} degrees"
                 //+ $"\nSolar elevation 2 {solarElevation2Deg:0.0#####} degrees"
                 //+ $"\nSolar azimuth 1_a {solarAzimuthDeg1_a:0.0#####} degrees"
                 //+ $"\nSolar azimuth 1_b {solarAzimuthDeg1_b:0.0#####} degrees"
                 //+ $"\nSolar azimuth 2_a {solarAzimuthDeg2_a:0.0#####} degrees"
                 //+ $"\nSolar azimuth 2_b {solarAzimuthDeg2_b:0.0#####} degrees"
-                + $"\nSolar azimuth {solarAzimuthDeg:0.0#####} degrees"
-            );
+                //+ $"\nSolar azimuth {solarAzimuthDeg:0.0#####} degrees"
+        //   );
+        Debug.Log($"Solar azimuth {solarAzimuthDeg:0.0##} deg, elevation {solarElevation1Deg:0.0##} deg");
         return (solarAzimuthDeg, solarElevation1Deg);
-    }
-
-    // For very quick testing purposes. Source: https://gml.noaa.gov/grad/solcalc/azel.html
-    //   New York City, 09:00 Dec 1:
-    //      equation of time 11.04
-    //      declination -21.81
-    //      elevation 16.71 (1)
-    //      azimuth 140.29 (2a)
-    //   New York City, 17:00 Jun 1: 
-    //      equation of time 2.12
-    //      declination 22.11
-    //      elevation 24.19 (1)
-    //      azimuth 279.11 (2b)
-    //   San Francisco, 09:00 Mar 1: 
-    //      equation of time -12.33
-    //      declination -7.5
-    //      elevation 24.78 (1)
-    //      azimuth 122.61 (2a)
-    //   San Francisco, 17:00 Sep 1: 
-    //      equation of time 0.07
-    //      declination 8.07
-    //      elevation 18.71 (1)
-    //      azimuth 265.74 (2b)
-    // I do see slightly different numbers from this math, but the numbers at the end of
-    // the calculations - azimuth and elevation - we are within a degree, and I suspect this
-    // is due to the math being an approximation. The NOAA spreadsheet math seems to be
-    // more accurate (for one thing it takes the year into account).
-    private void DoCalculationAndReport()
-    {
-        // Order here must match sequence in the enum.
-        // Source: https://www.latlong.net/
-        (MajorCities city, float lat, float lng) [] cities = 
-        {
-            (MajorCities.NewYork, 40.712776f, -74.005974f),
-            (MajorCities.SanFrancisco, 37.774929f, -122.419418f)
-        };
-        var currentCity = cities[(int)_nearestMajorCity];
-        _latitudeDecimalDegrees = currentCity.lat;
-        _longitudeDecimalDegrees = currentCity.lng;
-        CalculateSolarValues();
     }
 
     private static double Deg2Rad(double deg) { return (deg * (Math.PI / 180.0)); }
