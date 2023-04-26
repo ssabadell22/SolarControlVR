@@ -4,31 +4,32 @@ using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
+public enum MajorCities { NewYork, SanFrancisco }
+public enum Timezones { Eastern, Central, Mountain, Pacific }
+public enum Months { January, February, March, April, May, June, July, 
+                    August, September, October, November, December }
+
+
 public class SunAngleCalculator : MonoBehaviour
 {
     [SerializeField] private Light _sunLight;
 
-    private enum MajorCities { NewYork, SanFrancisco }
-    private enum Timezones { Eastern, Central, Mountain, Pacific }
     // Using an enum gives me a selectable list that the user cannot add to; we don't
     // have a mechanism for adding both name and lat/long.
     [Header("Project Location")]
-    [SerializeField] private MajorCities _nearestMajorCity;
-    [SerializeField] [Tooltip("Only US timezones, for now")]
-        private Timezones _timeZone;
+    public MajorCities nearestMajorCity;
+    [Tooltip("Only US timezones, for now")] public Timezones timeZone;
     
-    private enum Months { January, February, March, April, May, June, July, August, 
-        September, October, November, December }
     [Header("Date")]
     // MISSING: YEAR (would only be used for determining leap years, given the formulae I have)
-    [SerializeField] private Months _month = Months.June;
-    [SerializeField] [Range(1, 31)] [Tooltip("No validation on month-days yet")] 
-        private int _dayOfMonth = 21;
+    public Months month = Months.June;
+    [Range(1, 31)] [Tooltip("No validation on month-days yet")] 
+        public int dayOfMonth = 21;
 
     [Header("Time")]
-    [SerializeField] [Range(0, 23)] [Tooltip("Range is 0:00 to 13:59")] 
-        private int _hour = 12;
-    [SerializeField] [Range(0, 59)] private int _minute = 0;
+    [Range(0, 23)] [Tooltip("Range is 0:00 to 13:59")] 
+        public int hour = 12;
+    [Range(0, 59)] public int minute = 0;
 
     [Button(ButtonSizes.Medium)]
         private void DoTheMath() { DoCalculationAndReport(); }
@@ -54,7 +55,7 @@ public class SunAngleCalculator : MonoBehaviour
     {
     }
     
-    private void ApplySolarValuesToSunLight()
+    public void ApplySolarValuesToSunLight()
     {
         var currentCity = CityLatitudeAndLongitude();
         _latitudeDecimalDegrees = currentCity.lat;
@@ -144,8 +145,8 @@ public class SunAngleCalculator : MonoBehaviour
                 (Months.December,  31+28+31+30+31+30+31+31+30+31+30),
             };
 
-        int dayOfYearIndex = monthsAndStartingIndex[(int)_month].dayIndex;
-        return (dayOfYearIndex + _dayOfMonth);
+        int dayOfYearIndex = monthsAndStartingIndex[(int)month].dayIndex;
+        return (dayOfYearIndex + dayOfMonth);
     }
 
     // Returns lat and long for the selected major city, in degrees.
@@ -158,7 +159,7 @@ public class SunAngleCalculator : MonoBehaviour
             (MajorCities.NewYork, 40.712776f, -74.005974f),
             (MajorCities.SanFrancisco, 37.774929f, -122.419418f)
         };
-        var currentCity = cities[(int)_nearestMajorCity];
+        var currentCity = cities[(int)nearestMajorCity];
         return (currentCity.lat, currentCity.lng);
     }
 
@@ -215,8 +216,8 @@ public class SunAngleCalculator : MonoBehaviour
     {
         // For leap year accommodation, use 366 instead of 365
         double baseRadians = (2.0 * Math.PI) / 365.0;
-        double baseHours = (double)(_hour - 12) / 24.0;
-        int dayOfYear = DayOfYear() + _dayOfMonth;
+        double baseHours = (double)(hour - 12) / 24.0;
+        int dayOfYear = DayOfYear() + dayOfMonth;
         double fracYear = (baseRadians * ((double)(dayOfYear - 1) + baseHours));
         return fracYear;
     }
@@ -260,7 +261,7 @@ public class SunAngleCalculator : MonoBehaviour
             (Timezones.Mountain, -7.0),
             (Timezones.Pacific, -8.0)
         };
-        double tzHoursFromUTC = timeZoneOffsets[(int)_timeZone].hoursFromUTC;
+        double tzHoursFromUTC = timeZoneOffsets[(int)timeZone].hoursFromUTC;
         // The formula calls for longitude in degrees
         double timeOffset = equationOfTime 
                             + (4.0 * _longitudeDecimalDegrees) 
@@ -272,8 +273,8 @@ public class SunAngleCalculator : MonoBehaviour
     private double TrueSolarTime(double timeOffset)
     {
         // Assumes hours are in the range 0-23, minutes 0-59, and (when used) seconds 0-59
-        double trueSolarTime = ((double)_hour * 60.0)
-                               + (double)_minute
+        double trueSolarTime = ((double)hour * 60.0)
+                               + (double)minute
                                // + (seconds / 60.0)
                                + timeOffset;
         return trueSolarTime;

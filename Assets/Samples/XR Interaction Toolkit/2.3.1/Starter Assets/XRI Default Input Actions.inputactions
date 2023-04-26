@@ -316,15 +316,6 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "Aim Flags",
-                    "type": "Value",
-                    "id": "f98e71db-49b4-4882-8991-a0e386733e87",
-                    "expectedControlType": "Integer",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": true
-                },
-                {
                     "name": "Pinch Position",
                     "type": "Value",
                     "id": "cac52a91-5970-4ad2-8c86-a8c0e91a1837",
@@ -548,17 +539,6 @@
                     "processors": "",
                     "groups": "Generic XR Controller",
                     "action": "Is Tracked",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "286f44f6-74a5-4f92-8468-42445c7a3cb8",
-                    "path": "<MetaAimHand>{LeftHand}/aimFlags",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Generic XR Controller",
-                    "action": "Aim Flags",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
@@ -851,15 +831,6 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
-                },
-                {
-                    "name": "HandMove",
-                    "type": "Value",
-                    "id": "801ac247-125c-4102-85f9-eaa30b9a4552",
-                    "expectedControlType": "Vector3",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -950,17 +921,6 @@
                     "action": "Snap Turn",
                     "isComposite": false,
                     "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "5d53d763-1f21-4b46-9d14-c0756c0277ad",
-                    "path": "<MetaAimHand>{LeftHand}/devicePosition",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "HandMove",
-                    "isComposite": false,
-                    "isPartOfComposite": false
                 }
             ]
         },
@@ -1027,15 +987,6 @@
                     "type": "Value",
                     "id": "148c182f-63ef-4709-8057-f6ea8070cb5c",
                     "expectedControlType": "Quaternion",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": true
-                },
-                {
-                    "name": "Aim Flags",
-                    "type": "Value",
-                    "id": "93a75a21-033e-440c-9954-ff264afb2db9",
-                    "expectedControlType": "Integer",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
@@ -1264,17 +1215,6 @@
                     "processors": "",
                     "groups": "Generic XR Controller",
                     "action": "Is Tracked",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "5469d4d1-9645-4397-a596-d74f876eafc2",
-                    "path": "<MetaAimHand>{RightHand}/aimFlags",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Generic XR Controller",
-                    "action": "Aim Flags",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
