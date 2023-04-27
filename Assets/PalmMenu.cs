@@ -5,14 +5,17 @@ using UnityEngine;
 
 public class PalmMenu : MonoBehaviour
 {
+    [SerializeField] private SunAngleCalculator _sunAngleCalculator;
     [SerializeField] private SunAngleInput _sunAngleInput;
     [SerializeField] private List<MeshRenderer> _datePickerObjects;
     [SerializeField] [Range(0.1f, 1.0f)] private float _interactableTransitionTime = 0.5f;
 
     [Header("Buttons")] 
     [SerializeField] private TMP_Text _dateButtonText;
+    [SerializeField] private TMP_Text _animateButtonText;
     
     private bool _dateObjectsOn = true;
+    private bool _sunAnimationPlayed = false;
 
     public void ToggleDateObjectDisplay()
     {
@@ -34,6 +37,22 @@ public class PalmMenu : MonoBehaviour
             _dateButtonText.text = "Hide Date Controls";
             _dateObjectsOn = true;
             _sunAngleInput.MakeOnlyCurrentDateActive();
+        }
+    }
+
+    public void AnimateTheSunOrReset()
+    {
+        if (_sunAnimationPlayed)
+        {
+            _animateButtonText.text = "Animate the Day";
+            _sunAnimationPlayed = false;
+            _sunAngleCalculator.ApplySolarValuesToSunLight();
+        }
+        else
+        {
+            _animateButtonText.text = "Reset the Sun";
+            _sunAnimationPlayed = true;
+            _sunAngleCalculator.AnimateTheDay();
         }
     }
 

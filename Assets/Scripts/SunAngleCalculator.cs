@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public enum MajorCities { NewYork, SanFrancisco }
@@ -42,6 +43,9 @@ public class SunAngleCalculator : MonoBehaviour
     // Longitude values are positive to the east of the Prime Meridian
     [Range(-180f, 180f)]
     private float _longitudeDecimalDegrees = 120f;
+
+    private float _sunAngleLerpTime = 3f;
+    private float _fullDayLerpTime = 15f;
     
     // Start is called before the first frame update
     void Start()
@@ -50,12 +54,7 @@ public class SunAngleCalculator : MonoBehaviour
             "Lights controlled by the Sun Angle Calculator must be type Directional.");
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-    }
-    
-    public void ApplySolarValuesToSunLight()
+    public void ApplySolarValuesToSunLight(bool lerp = true)
     {
         var currentCity = CityLatitudeAndLongitude();
         _latitudeDecimalDegrees = currentCity.lat;
@@ -79,8 +78,60 @@ public class SunAngleCalculator : MonoBehaviour
         Vector3 angles = new Vector3();
         angles.x = (float)sunAngles.elevation;
         angles.y = (float)sunAngles.azimuth - 180f;
+        Quaternion newLocalRotation = Quaternion.Euler(angles);
         Debug.Log($"Setting azimuth to {angles.y} and elevation to {angles.x}");
-        _sunLight.transform.localRotation = Quaternion.Euler(angles);
+
+        if (lerp)
+            StartCoroutine(LerpSunAngleChange(newLocalRotation));
+        else
+            _sunLight.transform.localRotation = newLocalRotation;
+    }
+
+    private IEnumerator LerpSunAngleChange(Quaternion newLocalRotation)
+    {
+        Quaternion oldLocalRotation = _sunLight.transform.localRotation;
+        for (float f = 0f; f < _sunAngleLerpTime; f += Time.deltaTime)
+        {
+            _sunLight.transform.localRotation =
+                Quaternion.Lerp(oldLocalRotation, newLocalRotation, f / _sunAngleLerpTime);
+            yield return null;
+        }
+        _sunLight.transform.localRotation = newLocalRotation;
+    }
+
+    public void AnimateTheDay()
+    {
+        StartCoroutine(LerpADayOfSunshine());
+    }
+
+    private IEnumerator LerpADayOfSunshine()
+    {
+        int assumedStartHour = 6;
+        int assumedEndHour = 18;
+        // Hang on to our exposed properties, restore them at the end
+        int userHours = hour;
+        int userMinutes = minute;
+        
+        // Here is where we start
+        hour = assumedStartHour;
+        minute = 0;
+        float startingMinutesIntoDay = (float)(hour * 60);
+        float endingMinutesIntoDay = (float)(assumedEndHour * 60);
+
+        for (float f = 0f; f < _fullDayLerpTime; f += Time.deltaTime)
+        {
+            // lerp based on minutes, then convert back to hours and minutes
+            float minutesIntoDay = 
+                Mathf.Lerp(startingMinutesIntoDay, endingMinutesIntoDay, f / _fullDayLerpTime);
+            hour = (int)Mathf.Floor(minutesIntoDay / 60f);
+            minute = (int)(minutesIntoDay - (float)(hour * 60));
+            ApplySolarValuesToSunLight(false);
+            yield return null;
+        }
+        
+        // restore hour and minute values, but don't reset the sun
+        hour = userHours;
+        minute = userMinutes;
     }
 
     // For very quick testing purposes. Source: https://gml.noaa.gov/grad/solcalc/azel.html
@@ -171,7 +222,7 @@ public class SunAngleCalculator : MonoBehaviour
         double fractionalYear = FractionalYear();
         double equationOfTime = EquationOfTime(fractionalYear);
         double solarDeclinationAngle = SolarDeclinationAngle(fractionalYear);
-        //double solarDeclinationAngleDeg = Rad2Deg(solarDeclinationAngle);
+        double solarDeclinationAngleDeg = Rad2Deg(solarDeclinationAngle);
         double timeOffset = TimeOffset(equationOfTime);
         double trueSolarTime = TrueSolarTime(timeOffset);
         double solarHourAngle = SolarHourAngle(trueSolarTime);
@@ -201,7 +252,18 @@ public class SunAngleCalculator : MonoBehaviour
                 //+ $"\nSolar azimuth 2_b {solarAzimuthDeg2_b:0.0#####} degrees"
                 //+ $"\nSolar azimuth {solarAzimuthDeg:0.0#####} degrees"
         //   );
+        Debug.Log($"Equation of time {equationOfTime:0.0#####} minutes"
+                  + $"\nSolar declination angle {solarDeclinationAngleDeg:0.0#####} degrees");
         Debug.Log($"Solar azimuth {solarAzimuthDeg:0.0##} deg, elevation {solarElevation1Deg:0.0##} deg");
+
+        //(double sunriseHA, double sunsetHA) daysEndHourAngles = SolarHourAngleSunriseSunset(solarDeclinationAngle);
+        //(double sunriseMin, double sunsetMin) minutesRiseSet =
+        //    TimeOfSunriseSunset(daysEndHourAngles.sunriseHA, daysEndHourAngles.sunsetHA, equationOfTime);
+        //Debug.Log($"Sunrise in minutes {minutesRiseSet.sunriseMin} Sunset in minutes {minutesRiseSet.sunsetMin}");
+        
+        //double hoursBeforeLocalNoon = HoursBeforeLocalNoon();
+        //Debug.Log($"Hours before local noon {hoursBeforeLocalNoon}");
+        
         return (solarAzimuthDeg, solarElevation1Deg);
     }
 
@@ -286,6 +348,50 @@ public class SunAngleCalculator : MonoBehaviour
         double hourAngle = (trueSolarTime / 4.0) - 180.0;
         return Deg2Rad(hourAngle);
     }
+
+    // These two not giving me the right answer, and it might be because declination
+    // calc includes fractionalYear, which includes the hours setting; seems circular.
+    /*
+    private (double, double) SolarHourAngleSunriseSunset(double declination)
+    {
+        double latitudeInRadians = Deg2Rad(_latitudeDecimalDegrees);
+        double specialZenithValue = Deg2Rad(90.833);
+        double partA = Math.Cos(specialZenithValue) / (Math.Cos(latitudeInRadians) * Math.Cos(declination));
+        double partB = Math.Tan(latitudeInRadians) * Math.Tan(declination);
+        double partC = partA - partB;
+
+        Debug.Assert(partC >= -1.0 && partC <= 1.0, $"partC value out of range in SolarHourAngleSunriseSunset {partC}");
+        double hourAngleRiseSet = Math.Acos(partC);
+        //Debug.Log($"Sunrise Sunset hour angle {hourAngleRiseSet}");
+        if (hourAngleRiseSet > 0.0)
+            return (hourAngleRiseSet, -hourAngleRiseSet);
+        else
+            return (-hourAngleRiseSet, hourAngleRiseSet);
+    }
+
+    private (double, double) TimeOfSunriseSunset(double hourAngleSunrise, double hourAngleSunset, double equationOfTime)
+    {
+        double sunrise = 720.0 - (4.0 * (_longitudeDecimalDegrees + hourAngleSunrise)) - equationOfTime;
+        double sunset = 720.0 - (4.0 * (_longitudeDecimalDegrees + hourAngleSunset)) - equationOfTime;
+        return (sunrise, sunset);
+    }
+    */
+    
+    // Can't get this to work, out of time
+    /*
+    // Alternate math, from https://www.had2know.org/society/sunrise-sunset-time-calculator-formula.html
+    private double HoursBeforeLocalNoon()
+    {
+        int dayOfYear = DayOfYear();
+        double tiltOfEarthRadians = Deg2Rad(23.44);
+        double latitudeInRadians = Deg2Rad(_latitudeDecimalDegrees);
+        //double partA = Math.Sin(Math.PI * 2.0 * (dayOfYear + 284) / 365.0);
+        double partA = Math.Sin(360.0 * (dayOfYear + 284) / 365.0);
+        double partB = Math.Tan(latitudeInRadians) * Math.Tan(tiltOfEarthRadians * partA);
+        double hoursBeforeLocalNoon = Math.Abs((1.0 / 15.0) * Math.Acos(-partB));
+        return hoursBeforeLocalNoon;
+    }
+    */
 
     // Calculate the solar zenith angle, in radians. hourAngle and declination expected in radians.
     // I am not yet sure what range of values to expect, and since the arc-cos can be + or -,

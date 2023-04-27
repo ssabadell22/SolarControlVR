@@ -7,8 +7,6 @@ public class SunAngleInput : MonoBehaviour
 {
     [SerializeField] private SunAngleCalculator _sunAngleCalculator;
     [SerializeField] private Transform _monthCylinderTransform;
-    //[SerializeField] private GameObject _dateDecreaseButton;
-    //[SerializeField] private GameObject _dateIncreaseButton;
     [SerializeField] private List<GameObject> _dateObjects;
 
     // Start and end of a single interaction
