@@ -94,6 +94,16 @@ public class SunAngleInput : MonoBehaviour
                 return 31;
         }
     }
+    public void MakeOnlyCurrentDateActive()
+    {
+        for (int i = 0; i < _dateObjects.Count; ++i)
+        {
+            if (i == _datePickerCurrentDate - 1)
+                _dateObjects[i].SetActive(true);
+            else
+                _dateObjects[i].SetActive(false);
+        }
+    }
 
 
     // public void DateWheelOnValueChanged(float angle)
