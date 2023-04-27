@@ -22,9 +22,11 @@ The ability to “see” how sunlight will penetrate a space - how it will cast 
 
 For this project, all of the controls for setting the sun’s parameters are presented as 3D “in game” elements. The user will be able to set all sun parameters while in VR, using hand tracking, and interaction with virtual 3D “controls”. This lets the user immediately experience - immersively - the effects of changes in sunlight throughout the day and year.
 
+As this was a 1-week project I was only able to implement controls for the current date. With more time I would implement controls for setting the project location, and the time of day.
+
 ## Project Details
 
-Built with Unity 2021.3.22f1, the HDRP rendering pipeline, XR Plugin Management version 4.3.3, and XR Interaction Toolkit 2.3.1
+Built with Unity 2021.3.22f1, the HDRP rendering pipeline, XR Plugin Management version 4.3.3, XR Interaction Toolkit 2.3.1, and XR Hands 1.1.0
 
 Sun angle calculations based primarily on information from NOAA:
 https://gml.noaa.gov/grad/solcalc/solareqns.PDF
